@@ -2,6 +2,7 @@ import type { AppConfig } from "../config/types";
 import { registerAgent, pollJobs, completeJob, failJob } from "../api/printAgentApi";
 import { getPrinterIpForJob, printToNetworkPrinter } from "./printerService";
 import { updateForegroundServiceStatus } from "./foregroundService";
+import { saveJobToHistory, jobDtoToHistoryItem, updateJobStatus } from "./jobHistoryService";
 
 let isRunning = false;
 let registrationRetryCount = 0;
@@ -57,20 +58,28 @@ export async function startAgent(config: AppConfig) {
       const jobs = await pollJobs(config);
 
       for (const job of jobs) {
+        // Save job to history as processing
+        await saveJobToHistory(jobDtoToHistoryItem(job, "processing"));
+        
         const printerIp = getPrinterIpForJob(job.printerType, config);
         if (!printerIp) {
-          await failJob(config, job.id, "Printer IP not configured");
+          const errorMsg = "Printer IP not configured";
+          await failJob(config, job.id, errorMsg);
+          await updateJobStatus(job.id, "failed", errorMsg);
           continue;
         }
 
         try {
           await printToNetworkPrinter(printerIp, 9100, job.content);
           await completeJob(config, job.id);
+          await updateJobStatus(job.id, "completed");
           // Update notification with last job time
           const now = new Date().toLocaleTimeString();
           await updateForegroundServiceStatus('running', now);
         } catch (err: any) {
-          await failJob(config, job.id, err?.message || "Print failed");
+          const errorMsg = err?.message || "Print failed";
+          await failJob(config, job.id, errorMsg);
+          await updateJobStatus(job.id, "failed", errorMsg);
         }
       }
     } catch {

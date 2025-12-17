@@ -52,4 +52,22 @@ export async function failJob(config: AppConfig, jobId: number, error: string) {
   });
 }
 
+/**
+ * Get pending jobs without processing them (for viewing in UI)
+ */
+export async function getPendingJobs(config: AppConfig): Promise<PrintJobDto[]> {
+  const api = createApiClient(config);
+  const body = {
+    restaurantId: config.restaurantId,
+    agentId: config.agentId,
+    maxJobs: 50 // Get more jobs for the UI
+  };
+  try {
+    const res = await api.post("/printagent/poll", body);
+    return (res.data?.jobs ?? res.data ?? []) as PrintJobDto[];
+  } catch {
+    return [];
+  }
+}
+
 
