@@ -6,6 +6,7 @@ import { saveJobToHistory, jobDtoToHistoryItem, updateJobStatus } from "./jobHis
 
 let isRunning = false;
 let registrationRetryCount = 0;
+let agentDbId: number | null = null;
 const MAX_REGISTRATION_RETRIES = 5;
 const REGISTRATION_RETRY_DELAY_MS = 30000; // 30 seconds
 const REGISTRATION_RETRY_DELAY_AFTER_MAX_MS = 300000; // 5 minutes
@@ -15,29 +16,37 @@ const REGISTRATION_RETRY_DELAY_AFTER_MAX_MS = 300000; // 5 minutes
  */
 async function registerAgentWithRetry(config: AppConfig): Promise<boolean> {
   let retryCount = 0;
-  
-  while (retryCount < MAX_REGISTRATION_RETRIES) {
+
+  // Keep trying indefinitely with backoff strategy
+  // First 5 attempts: every 30s, then every 5 minutes
+  // On success: store numeric DB AgentId for polling
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
     try {
-      await registerAgent(config);
-      registrationRetryCount = 0; // Reset on success
-      return true;
-    } catch (error) {
+      const res = await registerAgent(config);
+      if (res?.success && res.agentId) {
+        agentDbId = res.agentId;
+        registrationRetryCount = 0;
+        return true;
+      }
+
+      throw new Error(res?.message || "Agent registration failed");
+    } catch {
       retryCount++;
       registrationRetryCount = retryCount;
-      
+
       if (retryCount < MAX_REGISTRATION_RETRIES) {
-        // Wait 30 seconds before retry
-        await new Promise(resolve => setTimeout(resolve, REGISTRATION_RETRY_DELAY_MS));
+        await new Promise((resolve) =>
+          setTimeout(resolve, REGISTRATION_RETRY_DELAY_MS)
+        );
       } else {
-        // After max retries, wait 5 minutes before trying again
-        await new Promise(resolve => setTimeout(resolve, REGISTRATION_RETRY_DELAY_AFTER_MAX_MS));
-        // Reset retry count and try again indefinitely
+        await new Promise((resolve) =>
+          setTimeout(resolve, REGISTRATION_RETRY_DELAY_AFTER_MAX_MS)
+        );
         retryCount = 0;
       }
     }
   }
-  
-  return false;
 }
 
 export async function startAgent(config: AppConfig) {
@@ -55,7 +64,15 @@ export async function startAgent(config: AppConfig) {
     if (!isRunning) return;
 
     try {
-      const jobs = await pollJobs(config);
+      // Don't poll until we have a numeric DB AgentId from registration
+      if (!agentDbId) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, config.pollIntervalMs)
+        );
+        return loop();
+      }
+
+      const jobs = await pollJobs(config, agentDbId);
 
       for (const job of jobs) {
         // Save job to history as processing

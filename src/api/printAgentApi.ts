@@ -1,7 +1,13 @@
 import type { AppConfig } from "../config/types";
 import { createApiClient } from "./client";
 
-export async function registerAgent(config: AppConfig) {
+export interface RegisterAgentResponse {
+  success: boolean;
+  agentId: number;
+  message?: string;
+}
+
+export async function registerAgent(config: AppConfig): Promise<RegisterAgentResponse> {
   const api = createApiClient(config);
   const body = {
     restaurantId: config.restaurantId,
@@ -13,7 +19,12 @@ export async function registerAgent(config: AppConfig) {
     createdBy: `${config.agentId}-PrintAgent`
   };
   const res = await api.post("/printagent/register", body);
-  return res.data as { success: boolean; agentId: number };
+  const data = res.data ?? {};
+  return {
+    success: data.success ?? data.Success ?? false,
+    agentId: data.agentId ?? data.AgentId ?? 0,
+    message: data.message ?? data.Message,
+  };
 }
 
 export interface PrintJobDto {
@@ -24,15 +35,41 @@ export interface PrintJobDto {
   orderId: string;
 }
 
-export async function pollJobs(config: AppConfig): Promise<PrintJobDto[]> {
+function mapPrinterTypeToNumeric(printerType: any): number {
+  if (typeof printerType === "number") return printerType;
+  if (typeof printerType === "string") {
+    const pt = printerType.toLowerCase();
+    if (pt === "kitchen") return 0;
+    if (pt === "bar") return 1;
+  }
+  return 0;
+}
+
+export async function pollJobs(
+  config: AppConfig,
+  agentDbId: number
+): Promise<PrintJobDto[]> {
   const api = createApiClient(config);
   const body = {
     restaurantId: config.restaurantId,
-    agentId: config.agentId,
+    agentId: agentDbId,
     maxJobs: 5
   };
   const res = await api.post("/printagent/poll", body);
-  return (res.data?.jobs ?? res.data ?? []) as PrintJobDto[];
+  const data = res.data ?? {};
+  const rawJobs = data.jobs ?? data.Jobs ?? data ?? [];
+
+  if (!Array.isArray(rawJobs)) {
+    return [];
+  }
+
+  return rawJobs.map((j: any) => ({
+    id: j.id ?? j.JobId,
+    restaurantId: j.restaurantId ?? j.RestaurantId,
+    printerType: mapPrinterTypeToNumeric(j.printerType ?? j.PrinterType),
+    content: j.content ?? j.Content ?? "",
+    orderId: j.orderId ?? j.OrderId ?? "",
+  }));
 }
 
 export async function completeJob(config: AppConfig, jobId: number) {
