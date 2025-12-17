@@ -10,14 +10,15 @@ import {
   Modal,
 } from "react-native";
 import { loadConfig } from "../config/configStore";
-import { getPendingJobs } from "../api/printAgentApi";
-import { getJobHistory, clearJobHistory, type JobHistoryItem } from "../services/jobHistoryService";
+import {
+  getJobHistory,
+  clearJobHistory,
+  updateJobStatus,
+  type JobHistoryItem,
+} from "../services/jobHistoryService";
 import { getPrinterIpForJob, printToNetworkPrinter } from "../services/printerService";
-import { completeJob, failJob } from "../api/printAgentApi";
-import { updateJobStatus, saveJobToHistory, jobDtoToHistoryItem } from "../services/jobHistoryService";
 
 export const JobsScreen: React.FC = () => {
-  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
   const [jobHistory, setJobHistory] = useState<JobHistoryItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
@@ -25,19 +26,12 @@ export const JobsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
 
   const loadData = useCallback(async () => {
-    const config = await loadConfig();
-    if (!config) return;
-
     try {
-      // Load pending jobs
-      const pending = await getPendingJobs(config);
-      setPendingJobs(pending);
-
-      // Load job history
+      // Load job history only from local storage
       const history = await getJobHistory();
       setJobHistory(history);
     } catch (error) {
-      console.error("Error loading jobs:", error);
+      console.error("Error loading job history:", error);
     }
   }, []);
 
@@ -54,7 +48,7 @@ export const JobsScreen: React.FC = () => {
     setRefreshing(false);
   }, [loadData]);
 
-  const handlePrintJob = async (job: any) => {
+  const handlePrintJob = async (job: JobHistoryItem) => {
     const config = await loadConfig();
     if (!config) {
       Alert.alert("Error", "Configuration not found");
@@ -76,20 +70,17 @@ export const JobsScreen: React.FC = () => {
           text: "Print",
           onPress: async () => {
             try {
-              // Save to history as processing
-              const historyItem = jobDtoToHistoryItem(job, "processing");
-              await saveJobToHistory(historyItem);
+              // Mark as processing locally
+              await updateJobStatus(job.jobId, "processing");
 
-              await printToNetworkPrinter(printerIp, 9100, job.content);
-              await completeJob(config, job.id);
-              await updateJobStatus(job.id, "completed");
-              
+              await printToNetworkPrinter(printerIp, 9100, job.content ?? "");
+              await updateJobStatus(job.jobId, "completed");
+
               Alert.alert("Success", "Job printed successfully");
               await loadData();
             } catch (error: any) {
               const errorMsg = error?.message || "Print failed";
-              await failJob(config, job.id, errorMsg);
-              await updateJobStatus(job.id, "failed", errorMsg);
+              await updateJobStatus(job.jobId, "failed", errorMsg);
               Alert.alert("Error", errorMsg);
               await loadData();
             }
@@ -181,19 +172,19 @@ export const JobsScreen: React.FC = () => {
     }
   };
 
-  const renderJobItem = (job: any, isHistory: boolean = false) => {
-    const status = isHistory ? (job as JobHistoryItem).status : "pending";
-    const jobId = job.id || job.jobId;
+  const renderJobItem = (job: JobHistoryItem, isHistory: boolean = false) => {
+    const status = job.status;
+    const jobId = job.jobId;
     const orderId = job.orderId;
     const printerType = job.printerType;
-    const timestamp = isHistory ? (job as JobHistoryItem).timestamp : Date.now();
+    const timestamp = job.timestamp;
 
     return (
       <TouchableOpacity
         key={jobId}
         style={styles.jobItem}
         onPress={() => {
-          setSelectedJob(isHistory ? (job as JobHistoryItem) : null);
+          setSelectedJob(job);
           setModalVisible(true);
         }}
       >
@@ -215,9 +206,9 @@ export const JobsScreen: React.FC = () => {
           <Text style={styles.jobDetail}>
             Time: {formatTime(timestamp)}
           </Text>
-          {isHistory && (job as JobHistoryItem).errorMessage && (
+          {job.errorMessage && (
             <Text style={styles.errorText}>
-              Error: {(job as JobHistoryItem).errorMessage}
+              Error: {job.errorMessage}
             </Text>
           )}
         </View>
@@ -254,7 +245,14 @@ export const JobsScreen: React.FC = () => {
               activeTab === "pending" && styles.activeTabText,
             ]}
           >
-            Pending ({pendingJobs.length})
+            Pending (
+            {
+              jobHistory.filter(
+                (job) =>
+                  job.status === "pending" || job.status === "processing"
+              ).length
+            }
+            )
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -279,13 +277,22 @@ export const JobsScreen: React.FC = () => {
         }
       >
         {activeTab === "pending" ? (
-          pendingJobs.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No pending jobs</Text>
-            </View>
-          ) : (
-            pendingJobs.map((job) => renderJobItem(job, false))
-          )
+          (() => {
+            const pendingJobs = jobHistory.filter(
+              (job) =>
+                job.status === "pending" || job.status === "processing"
+            );
+
+            if (pendingJobs.length === 0) {
+              return (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No pending jobs</Text>
+                </View>
+              );
+            }
+
+            return pendingJobs.map((job) => renderJobItem(job, false));
+          })()
         ) : (
           <>
             {jobHistory.length > 0 && (
