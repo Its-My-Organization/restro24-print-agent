@@ -24,6 +24,12 @@ export const JobsScreen: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<JobHistoryItem | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "processing" | "completed" | "failed"
+  >("all");
+  const [printerFilter, setPrinterFilter] = useState<"all" | "kitchen" | "bar">(
+    "all"
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -234,6 +240,63 @@ export const JobsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Simple filters for history view */}
+      {activeTab === "history" && (
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Status:</Text>
+              {["all", "pending", "processing", "completed", "failed"].map(
+                (s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[
+                      styles.filterChip,
+                      statusFilter === s && styles.filterChipActive,
+                    ]}
+                    onPress={() =>
+                      setStatusFilter(s as typeof statusFilter)
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        statusFilter === s && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {s.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Printer:</Text>
+              {["all", "kitchen", "bar"].map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  style={[
+                    styles.filterChip,
+                    printerFilter === p && styles.filterChipActive,
+                  ]}
+                  onPress={() =>
+                    setPrinterFilter(p as typeof printerFilter)
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      printerFilter === p && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {p.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      )}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "pending" && styles.activeTab]}
@@ -308,7 +371,17 @@ export const JobsScreen: React.FC = () => {
                 <Text style={styles.emptyText}>No job history</Text>
               </View>
             ) : (
-              jobHistory.map((job) => renderJobItem(job, true))
+              jobHistory
+                .filter((job) => {
+                  const statusOk =
+                    statusFilter === "all" || job.status === statusFilter;
+                  const printerOk =
+                    printerFilter === "all" ||
+                    (printerFilter === "kitchen" && job.printerType === 0) ||
+                    (printerFilter === "bar" && job.printerType === 1);
+                  return statusOk && printerOk;
+                })
+                .map((job) => renderJobItem(job, true))
             )}
           </>
         )}
@@ -476,6 +549,38 @@ const styles = StyleSheet.create({
   clearButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  filterContainer: {
+    paddingHorizontal: 8,
+    paddingTop: 8,
+  },
+  filterGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  filterLabel: {
+    fontWeight: "bold",
+    marginRight: 4,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginHorizontal: 2,
+  },
+  filterChipActive: {
+    backgroundColor: "#2196f3",
+    borderColor: "#2196f3",
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: "#333",
+  },
+  filterChipTextActive: {
+    color: "white",
   },
   modalContainer: {
     flex: 1,
