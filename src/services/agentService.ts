@@ -23,23 +23,78 @@ async function registerAgentWithRetry(config: AppConfig): Promise<boolean> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
+      console.log(`[registerAgentWithRetry] Attempt ${retryCount + 1}...`);
       const res = await registerAgent(config);
+      
       if (res?.success && res.agentId) {
+        console.log(`[registerAgentWithRetry] Success! Agent DB ID: ${res.agentId}`);
         agentDbId = res.agentId;
         registrationRetryCount = 0;
         return true;
       }
 
-      throw new Error(res?.message || "Agent registration failed");
-    } catch {
+      const errorMsg = res?.message || "Agent registration failed - no agentId returned";
+      console.warn(`[registerAgentWithRetry] Registration returned false:`, res);
+      throw new Error(errorMsg);
+    } catch (error: any) {
       retryCount++;
       registrationRetryCount = retryCount;
+      
+      const errorMessage = error?.message || error?.toString() || "Unknown error";
+      const isNetworkError = error?.code === "NETWORK_ERROR" || 
+                            error?.code === "ECONNABORTED" ||
+                            error?.code === "ERR_NETWORK" ||
+                            error?.message?.includes("Network") ||
+                            error?.message?.includes("timeout");
+      
+      // Detect SSL errors: ERR_NETWORK with no response and HTTPS URL
+      const isSSLError = (error?.code === "ERR_NETWORK" && !error?.response) ||
+                        error?.message?.includes("SSL") ||
+                        error?.message?.includes("certificate") ||
+                        error?.code === "CERT_HAS_EXPIRED" ||
+                        (isNetworkError && config.cloudApiBaseUrl.startsWith("https://"));
+      
+      console.error(`[registerAgentWithRetry] Attempt ${retryCount} failed:`, {
+        error: errorMessage,
+        code: error?.code,
+        isNetworkError,
+        isSSLError,
+        willRetry: true
+      });
+      
+      if (isSSLError && retryCount === 1) {
+        console.error("[registerAgentWithRetry] SSL Certificate Issue Detected!");
+        console.error("The server requires HTTPS. You must install the SSL certificate on the Android device.");
+        console.error("");
+        console.error("SOLUTION - Install SSL Certificate:");
+        console.error("1. Get the server's SSL certificate file (.crt or .pem)");
+        console.error("2. Transfer it to the Android device");
+        console.error("3. Settings → Security → Install from storage");
+        console.error("4. Select the certificate file");
+        console.error("5. Install as USER certificate (not just view)");
+        console.error("6. Restart the app after installation");
+        console.error("");
+        console.error("Note: The browser may work without this, but React Native requires the certificate.");
+      }
+      
+      // If using HTTPS and still getting network errors, it's likely SSL certificate issue
+      if (isNetworkError && config.cloudApiBaseUrl.startsWith("https://") && retryCount === 1) {
+        console.error("[registerAgentWithRetry] HTTPS Network Error Detected!");
+        console.error("The server requires HTTPS. Most likely causes:");
+        console.error("1. SSL certificate not installed on device (most common)");
+        console.error("2. Device cannot reach the server (check network/firewall)");
+        console.error("3. Wrong IP address or port");
+        console.error("");
+        console.error("ACTION: Install the SSL certificate on the device (see instructions above)");
+      }
 
       if (retryCount < MAX_REGISTRATION_RETRIES) {
+        console.log(`[registerAgentWithRetry] Retrying in ${REGISTRATION_RETRY_DELAY_MS / 1000}s...`);
         await new Promise((resolve) =>
           setTimeout(resolve, REGISTRATION_RETRY_DELAY_MS)
         );
       } else {
+        console.log(`[registerAgentWithRetry] Max retries reached. Waiting ${REGISTRATION_RETRY_DELAY_AFTER_MAX_MS / 1000}s before next attempt...`);
         await new Promise((resolve) =>
           setTimeout(resolve, REGISTRATION_RETRY_DELAY_AFTER_MAX_MS)
         );

@@ -11,7 +11,10 @@ module.exports = ({ config }) => ({
       "ACCESS_NETWORK_STATE",
       "FOREGROUND_SERVICE",
       "RECEIVE_BOOT_COMPLETED" // For auto-start on boot
-    ]
+    ],
+    // Allow cleartext (HTTP) traffic for development/testing
+    // WARNING: Only use HTTP on trusted networks, not in production
+    usesCleartextTraffic: true
   }
 });
 

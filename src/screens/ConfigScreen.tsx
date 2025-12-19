@@ -91,7 +91,27 @@ export const ConfigScreen: React.FC = () => {
         value={baseUrl}
         onChangeText={setBaseUrl}
         autoCapitalize="none"
+        placeholder="https://164.68.118.52:8006"
       />
+      {baseUrl.startsWith("https://") && (
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>📋 SSL Certificate Setup Required</Text>
+          <Text style={styles.infoText}>
+            Since the server uses HTTPS with a self-signed certificate, you must install it on the Android device:
+          </Text>
+          <Text style={styles.infoSteps}>
+            1. Get the server's SSL certificate file (.crt or .pem){"\n"}
+            2. Transfer it to the Android device{"\n"}
+            3. Settings → Security → Install from storage{"\n"}
+            4. Select the certificate file{"\n"}
+            5. Install as USER certificate (not just view){"\n"}
+            6. Restart the app after installation
+          </Text>
+          <Text style={styles.infoNote}>
+            Note: The browser may work without this, but React Native requires the certificate to be installed.
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.label}>API Key</Text>
       <TextInput
@@ -167,9 +187,51 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 20,
+    marginBottom: 20,
   },
   status: {
     marginTop: 16,
     color: "#555",
+  },
+  warningText: {
+    marginTop: 4,
+    marginBottom: 8,
+    fontSize: 12,
+    color: "#ff9800",
+    fontStyle: "italic",
+  },
+  infoBox: {
+    marginTop: 8,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: "#e3f2fd",
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196f3",
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1976d2",
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 12,
+    color: "#333",
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  infoSteps: {
+    fontSize: 11,
+    color: "#555",
+    marginBottom: 8,
+    lineHeight: 18,
+    fontFamily: "monospace",
+  },
+  infoNote: {
+    fontSize: 11,
+    color: "#666",
+    fontStyle: "italic",
+    marginTop: 4,
   },
 });

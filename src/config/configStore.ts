@@ -11,7 +11,14 @@ export async function loadConfig(): Promise<AppConfig | null> {
   const raw = await AsyncStorage.getItem(KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AppConfig;
+    const config = JSON.parse(raw) as AppConfig;
+    // Auto-migrate HTTP to HTTPS (server only accepts HTTPS)
+    if (config.cloudApiBaseUrl?.startsWith("http://164.68.118.52:8006")) {
+      config.cloudApiBaseUrl = config.cloudApiBaseUrl.replace("http://", "https://");
+      // Save the migrated config
+      await saveConfig(config);
+    }
+    return config;
   } catch {
     return null;
   }

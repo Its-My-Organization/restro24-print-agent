@@ -19,7 +19,7 @@ If your cloud API uses a **self-signed SSL certificate** (like `https://164.68.1
 5. The app will now trust the certificate
 
 #### Option B: Use HTTP for Development (Not Recommended for Production)
-- Change `cloudApiBaseUrl` in config to use `http://` instead of `https://`
+- Change `cloudApiBaseUrl` in config to use `https://` instead of `https://`
 - **Warning**: This is insecure and should only be used in trusted networks
 
 #### Option C: Use Proper CA-Signed Certificate (Best Practice)

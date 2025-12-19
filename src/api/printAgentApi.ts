@@ -18,13 +18,53 @@ export async function registerAgent(config: AppConfig): Promise<RegisterAgentRes
     hostAddress: config.agentId,
     createdBy: `${config.agentId}-PrintAgent`
   };
-  const res = await api.post("/printagent/register", body);
-  const data = res.data ?? {};
-  return {
-    success: data.success ?? data.Success ?? false,
-    agentId: data.agentId ?? data.AgentId ?? 0,
-    message: data.message ?? data.Message,
-  };
+  
+  try {
+    console.log("[registerAgent] Request:", {
+      url: `${config.cloudApiBaseUrl}/api/printagent/register`,
+      body,
+      headers: { "X-API-Key": config.apiKey ? "***" : "MISSING" }
+    });
+    
+    const res = await api.post("/printagent/register", body);
+    
+    console.log("[registerAgent] Response:", {
+      status: res.status,
+      statusText: res.statusText,
+      data: res.data
+    });
+    
+    const data = res.data ?? {};
+    const result = {
+      success: data.success ?? data.Success ?? false,
+      agentId: data.agentId ?? data.AgentId ?? 0,
+      message: data.message ?? data.Message,
+    };
+    
+    console.log("[registerAgent] Parsed result:", result);
+    return result;
+  } catch (error: any) {
+    console.error("[registerAgent] Full Error Details:", {
+      message: error?.message,
+      code: error?.code,
+      errno: error?.errno,
+      syscall: error?.syscall,
+      address: error?.address,
+      port: error?.port,
+      response: error?.response?.data,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      config: {
+        url: error?.config?.url,
+        baseURL: error?.config?.baseURL,
+        method: error?.config?.method,
+        headers: error?.config?.headers,
+      },
+      // Log the full error object
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+    });
+    throw error;
+  }
 }
 
 export interface PrintJobDto {
