@@ -8,12 +8,14 @@ import {
   RefreshControl,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { loadConfig } from "../config/configStore";
 import {
   getJobHistory,
   clearJobHistory,
   updateJobStatus,
+  removeJobFromHistory,
   type JobHistoryItem,
 } from "../services/jobHistoryService";
 import { getPrinterIpForJob, printToNetworkPrinter } from "../services/printerService";
@@ -222,17 +224,64 @@ export const JobsScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.printButton}
             onPress={() => handlePrintJob(job)}
+            activeOpacity={0.8}
           >
+            <Text style={styles.printButtonIcon}>🖨️</Text>
             <Text style={styles.printButtonText}>Print Now</Text>
           </TouchableOpacity>
         )}
-        {isHistory && status === "failed" && (
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => handleRetryJob(job as JobHistoryItem)}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+        {isHistory && (
+          <View style={styles.historyActions}>
+            {status === "failed" && (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => handleRetryJob(job as JobHistoryItem)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.retryButtonIcon}>🔄</Text>
+                <Text style={styles.retryButtonText}>Retry Print</Text>
+              </TouchableOpacity>
+            )}
+            {(status === "pending" || status === "processing") && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={async () => {
+                  Alert.alert(
+                    "Cancel Job",
+                    `Cancel print job for order #${job.orderId}?`,
+                    [
+                      { text: "No", style: "cancel" },
+                      {
+                        text: "Yes, Cancel",
+                        style: "destructive",
+                        onPress: async () => {
+                          await removeJobFromHistory(job.jobId);
+                          await loadData();
+                        },
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelButtonIcon}>✕</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            {status !== "pending" && status !== "processing" && status !== "failed" && (
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={async () => {
+                  await removeJobFromHistory(job.jobId);
+                  await loadData();
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.removeButtonIcon}>🗑️</Text>
+                <Text style={styles.removeButtonText}>Remove</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </TouchableOpacity>
     );
@@ -509,25 +558,117 @@ const styles = StyleSheet.create({
   },
   printButton: {
     backgroundColor: "#4caf50",
-    padding: 10,
-    borderRadius: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#4caf50",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  printButtonIcon: {
+    fontSize: 18,
+    marginRight: 8,
   },
   printButtonText: {
     color: "white",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
   retryButton: {
-    backgroundColor: "#ff9800",
-    padding: 10,
-    borderRadius: 4,
+    backgroundColor: "#667eea",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#667eea",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    minWidth: 140,
+  },
+  retryButtonIcon: {
+    fontSize: 18,
+    marginRight: 8,
   },
   retryButtonText: {
     color: "white",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  cancelButton: {
+    backgroundColor: "#f5576c",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginLeft: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#f5576c",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    minWidth: 140,
+  },
+  cancelButtonIcon: {
+    fontSize: 18,
+    marginRight: 8,
+    color: "white",
     fontWeight: "bold",
+  },
+  cancelButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  removeButton: {
+    backgroundColor: "#9e9e9e",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginLeft: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#9e9e9e",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 140,
+  },
+  removeButtonIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  removeButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  historyActions: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
   },
   emptyContainer: {
     flex: 1,

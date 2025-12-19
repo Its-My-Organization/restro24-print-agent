@@ -81,6 +81,15 @@ export async function clearJobHistory(): Promise<void> {
 }
 
 /**
+ * Remove a single job from local history (does not affect server)
+ */
+export async function removeJobFromHistory(jobId: number): Promise<void> {
+  const history = await getJobHistory();
+  const filtered = history.filter((j) => j.jobId !== jobId);
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
+}
+
+/**
  * Convert PrintJobDto to JobHistoryItem
  */
 export function jobDtoToHistoryItem(job: PrintJobDto, status: JobHistoryItem["status"] = "pending"): JobHistoryItem {
