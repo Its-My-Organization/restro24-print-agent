@@ -94,21 +94,32 @@ export const ConfigScreen: React.FC = () => {
         placeholder="https://164.68.118.52:8006"
       />
       {baseUrl.startsWith("https://") && (
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>📋 SSL Certificate Setup Required</Text>
-          <Text style={styles.infoText}>
-            Since the server uses HTTPS with a self-signed certificate, you must install it on the Android device:
+        <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>⚠️ SSL Certificate Issue</Text>
+          <Text style={styles.warningText}>
+            React Native cannot connect to HTTPS servers with self-signed certificates. You have two options:
           </Text>
-          <Text style={styles.infoSteps}>
-            1. Get the server's SSL certificate file (.crt or .pem){"\n"}
-            2. Transfer it to the Android device{"\n"}
+          <Text style={styles.warningSteps}>
+            <Text style={styles.boldText}>Option 1 (Development):</Text>{"\n"}
+            Change URL to HTTP: http://164.68.118.52:8006{"\n"}
+            {"\n"}
+            <Text style={styles.boldText}>Option 2 (Production):</Text>{"\n"}
+            1. Extract certificate: openssl s_client -showcerts -connect 164.68.118.52:8006 {"<"} /dev/null 2{">"}/dev/null | openssl x509 -outform PEM {" >"} server.crt{"\n"}
+            2. Transfer server.crt to Android device{"\n"}
             3. Settings → Security → Install from storage{"\n"}
-            4. Select the certificate file{"\n"}
-            5. Install as USER certificate (not just view){"\n"}
-            6. Restart the app after installation
+            4. Select server.crt and install as USER certificate{"\n"}
+            5. Restart app
           </Text>
-          <Text style={styles.infoNote}>
-            Note: The browser may work without this, but React Native requires the certificate to be installed.
+          <Text style={styles.warningNote}>
+            💡 For Android Emulator: Use HTTP (Option 1) for quick testing. For real devices, install the certificate (Option 2).
+          </Text>
+        </View>
+      )}
+      {baseUrl.startsWith("http://") && !baseUrl.startsWith("https://") && (
+        <View style={styles.devWarningBox}>
+          <Text style={styles.devWarningTitle}>🔓 Development Mode - HTTP Enabled</Text>
+          <Text style={styles.devWarningText}>
+            ⚠️ WARNING: Using HTTP is insecure and should only be used for development/testing in trusted networks. Never use HTTP in production!
           </Text>
         </View>
       )}
@@ -193,45 +204,62 @@ const styles = StyleSheet.create({
     marginTop: 16,
     color: "#555",
   },
-  warningText: {
-    marginTop: 4,
-    marginBottom: 8,
-    fontSize: 12,
-    color: "#ff9800",
-    fontStyle: "italic",
-  },
-  infoBox: {
+  warningBox: {
     marginTop: 8,
     marginBottom: 12,
     padding: 12,
-    backgroundColor: "#e3f2fd",
+    backgroundColor: "#fff3cd",
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: "#2196f3",
+    borderLeftColor: "#ffc107",
   },
-  infoTitle: {
+  warningTitle: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#1976d2",
+    color: "#856404",
     marginBottom: 8,
   },
-  infoText: {
+  warningText: {
     fontSize: 12,
     color: "#333",
     marginBottom: 8,
     lineHeight: 18,
   },
-  infoSteps: {
+  warningSteps: {
     fontSize: 11,
     color: "#555",
     marginBottom: 8,
     lineHeight: 18,
     fontFamily: "monospace",
   },
-  infoNote: {
+  warningNote: {
     fontSize: 11,
-    color: "#666",
+    color: "#856404",
     fontStyle: "italic",
     marginTop: 4,
+    fontWeight: "500",
+  },
+  boldText: {
+    fontWeight: "bold",
+  },
+  devWarningBox: {
+    marginTop: 8,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: "#f8d7da",
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#dc3545",
+  },
+  devWarningTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#721c24",
+    marginBottom: 8,
+  },
+  devWarningText: {
+    fontSize: 12,
+    color: "#721c24",
+    lineHeight: 18,
   },
 });

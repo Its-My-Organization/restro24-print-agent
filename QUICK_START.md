@@ -62,9 +62,17 @@ src/
 
 ## Common Issues
 
-**Agent not registering?**
-- Check API URL and key
-- Install SSL certificate if using self-signed cert
+**Agent not registering? (SSL Certificate Error)**
+- **Quick Fix (Development)**: Change URL from `https://` to `http://` in the config screen
+  - Example: `http://164.68.118.52:8006` instead of `https://164.68.118.52:8006`
+  - ⚠️ **Warning**: HTTP is insecure, only use for development/testing!
+- **Proper Fix (Production)**: Install the SSL certificate on Android device
+  1. Extract certificate: Run `./extract-certificate.sh 164.68.118.52 8006` (or `.bat` on Windows)
+  2. Transfer `.crt` file to Android device
+  3. Settings → Security → Install from storage → Select certificate → Install as USER certificate
+  4. Restart app
+- Check API URL and API key are correct
+- Verify device can reach the server IP
 
 **Jobs not printing?**
 - Verify printer IPs are correct
