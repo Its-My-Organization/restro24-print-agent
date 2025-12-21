@@ -25,12 +25,15 @@ if %ERRORLEVEL% EQU 0 (
     echo 1. Transfer %OUTPUT_FILE% to your Android device
     echo 2. On Android: Settings → Security → Install from storage
     echo 3. Select %OUTPUT_FILE%
-    echo 4. Install as USER certificate (not just view)
-    echo 5. Restart the app
+    echo 4. IMPORTANT: When prompted 'Install a certificate', select 'CA certificate'
+    echo    (NOT 'Wi-Fi certificate' or 'VPN & app user certificate' - those require a private key)
+    echo 5. Name it (e.g., 'Restro API Certificate')
+    echo 6. Restart the app
     echo.
     echo For Android Emulator:
     echo   adb push %OUTPUT_FILE% /sdcard/Download/
     echo   Then install from Settings → Security → Install from storage
+    echo   IMPORTANT: Select 'CA certificate' when prompted (not Wi-Fi or VPN certificate)
 ) else (
     echo ❌ Failed to extract certificate
     echo Make sure:

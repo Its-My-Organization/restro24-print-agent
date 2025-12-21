@@ -10,16 +10,27 @@ import {
 } from "react-native";
 import type { AppConfig } from "../config/types";
 import { loadConfig, saveConfig } from "../config/configStore";
+import {
+  DEFAULT_API_BASE_URL,
+  DEFAULT_API_KEY,
+  DEFAULT_RESTAURANT_ID,
+  DEFAULT_AGENT_NAME,
+  DEFAULT_POLL_INTERVAL_MS,
+  AGENT_ID_PREFIX,
+  LEGACY_HTTP_URL,
+  LEGACY_CERT_HOST,
+  LEGACY_CERT_PORT,
+} from "../config/constants";
 import { startAgent } from "../services/agentService";
 import { registerBackgroundTask } from "../services/backgroundTask";
 import { startForegroundService } from "../services/foregroundService";
 
 export const ConfigScreen: React.FC = () => {
-  const [restaurantId, setRestaurantId] = useState("3");
-  const [baseUrl, setBaseUrl] = useState("https://164.68.118.52:8006");
-  const [apiKey, setApiKey] = useState("test-api-key-12345");
+  const [restaurantId, setRestaurantId] = useState(DEFAULT_RESTAURANT_ID);
+  const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE_URL);
+  const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
   const [agentId, setAgentId] = useState("");
-  const [agentName, setAgentName] = useState("Android Print Agent");
+  const [agentName, setAgentName] = useState(DEFAULT_AGENT_NAME);
   const [kitchenIp, setKitchenIp] = useState("");
   const [barIp, setBarIp] = useState("");
   const [saving, setSaving] = useState(false);
@@ -49,7 +60,7 @@ export const ConfigScreen: React.FC = () => {
 
     setSaving(true);
     try {
-      const id = agentId || `Android-${restaurantId}`;
+      const id = agentId || `${AGENT_ID_PREFIX}${restaurantId}`;
       const config: AppConfig = {
         restaurantId: Number(restaurantId),
         cloudApiBaseUrl: baseUrl,
@@ -58,7 +69,7 @@ export const ConfigScreen: React.FC = () => {
         agentName,
         printerIpKitchen: kitchenIp,
         printerIpBar: barIp,
-        pollIntervalMs: 10000,
+        pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
       };
 
       await saveConfig(config);
@@ -91,38 +102,8 @@ export const ConfigScreen: React.FC = () => {
         value={baseUrl}
         onChangeText={setBaseUrl}
         autoCapitalize="none"
-        placeholder="https://164.68.118.52:8006"
+        placeholder={DEFAULT_API_BASE_URL}
       />
-      {baseUrl.startsWith("https://") && (
-        <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>⚠️ SSL Certificate Issue</Text>
-          <Text style={styles.warningText}>
-            React Native cannot connect to HTTPS servers with self-signed certificates. You have two options:
-          </Text>
-          <Text style={styles.warningSteps}>
-            <Text style={styles.boldText}>Option 1 (Development):</Text>{"\n"}
-            Change URL to HTTP: http://164.68.118.52:8006{"\n"}
-            {"\n"}
-            <Text style={styles.boldText}>Option 2 (Production):</Text>{"\n"}
-            1. Extract certificate: openssl s_client -showcerts -connect 164.68.118.52:8006 {"<"} /dev/null 2{">"}/dev/null | openssl x509 -outform PEM {" >"} server.crt{"\n"}
-            2. Transfer server.crt to Android device{"\n"}
-            3. Settings → Security → Install from storage{"\n"}
-            4. Select server.crt and install as USER certificate{"\n"}
-            5. Restart app
-          </Text>
-          <Text style={styles.warningNote}>
-            💡 For Android Emulator: Use HTTP (Option 1) for quick testing. For real devices, install the certificate (Option 2).
-          </Text>
-        </View>
-      )}
-      {baseUrl.startsWith("http://") && !baseUrl.startsWith("https://") && (
-        <View style={styles.devWarningBox}>
-          <Text style={styles.devWarningTitle}>🔓 Development Mode - HTTP Enabled</Text>
-          <Text style={styles.devWarningText}>
-            ⚠️ WARNING: Using HTTP is insecure and should only be used for development/testing in trusted networks. Never use HTTP in production!
-          </Text>
-        </View>
-      )}
 
       <Text style={styles.label}>API Key</Text>
       <TextInput

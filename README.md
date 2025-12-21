@@ -63,7 +63,7 @@ From the backend's perspective it is just another `PrintAgent`:
 
 5. Configure:
    - **Restaurant ID** – e.g. `3`
-   - **Cloud API Base URL** – e.g. `https://164.68.118.52:8006`
+   - **Cloud API Base URL** – e.g. `https://restro24api.dailotech.com`
    - **API Key** – same as `CloudApi:ApiKey` / `PrintGateway` API key
    - **Agent ID** – optional stable ID (otherwise `Android-<restaurantId>` is used)
    - **Agent Name** – label visible in your backend

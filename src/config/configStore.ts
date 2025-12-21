@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppConfig } from "./types";
+import { LEGACY_HTTP_URL } from "./constants";
 
 const KEY = "restro-print-agent-config";
 
@@ -13,7 +14,7 @@ export async function loadConfig(): Promise<AppConfig | null> {
   try {
     const config = JSON.parse(raw) as AppConfig;
     // Auto-migrate HTTP to HTTPS (server only accepts HTTPS)
-    if (config.cloudApiBaseUrl?.startsWith("http://164.68.118.52:8006")) {
+    if (config.cloudApiBaseUrl?.startsWith(LEGACY_HTTP_URL)) {
       config.cloudApiBaseUrl = config.cloudApiBaseUrl.replace("http://", "https://");
       // Save the migrated config
       await saveConfig(config);

@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5e1f307d-eb50-47dd-87c2-31bd1f90c0a0"
+      }
+    },
+    "owner": "dailotechs",
+    "slug": "restro24-print-agent"
+  }
+}

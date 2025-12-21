@@ -71,8 +71,9 @@ async function registerAgentWithRetry(config: AppConfig): Promise<boolean> {
         console.error("2. Transfer it to the Android device");
         console.error("3. Settings → Security → Install from storage");
         console.error("4. Select the certificate file");
-        console.error("5. Install as USER certificate (not just view)");
-        console.error("6. Restart the app after installation");
+        console.error("5. IMPORTANT: Select 'CA certificate' (NOT 'Wi-Fi certificate' or 'VPN & app user certificate')");
+        console.error("6. Name it (e.g., 'Restro API Certificate')");
+        console.error("7. Restart the app after installation");
         console.error("");
         console.error("Note: The browser may work without this, but React Native requires the certificate.");
       }

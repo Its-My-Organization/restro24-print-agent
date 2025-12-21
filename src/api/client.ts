@@ -1,10 +1,11 @@
 import axios from "axios";
 import type { AppConfig } from "../config/types";
+import { API_TIMEOUT_MS, DEFAULT_API_BASE_URL } from "../config/constants";
 
 export function createApiClient(config: AppConfig) {
   const client = axios.create({
     baseURL: `${config.cloudApiBaseUrl.replace(/\/+$/, "")}/api`,
-    timeout: 10000,
+    timeout: API_TIMEOUT_MS,
     headers: {
       "Content-Type": "application/json",
       "X-API-Key": config.apiKey
@@ -85,8 +86,9 @@ export function createApiClient(config: AppConfig) {
             "2. Transfer it to the Android device",
             "3. Settings → Security → Install from storage",
             "4. Select the certificate file",
-            "5. Install as USER certificate (not just view)",
-            "6. Restart the app after installation",
+            "5. IMPORTANT: Select 'CA certificate' (NOT 'Wi-Fi certificate' or 'VPN & app user certificate')",
+            "6. Name it (e.g., 'Restro API Certificate')",
+            "7. Restart the app after installation",
             "",
             "Note: The browser may work without this, but React Native requires the certificate."
           ]
@@ -106,7 +108,7 @@ export function createApiClient(config: AppConfig) {
             console.error("5. Network connectivity issue");
             console.error("");
             console.error("DIAGNOSTIC STEPS:");
-            console.error("1. Test HTTPS in browser: https://164.68.118.52:8006/api/printagent/register");
+            console.error(`1. Test HTTPS in browser: ${DEFAULT_API_BASE_URL}/api/printagent/register`);
             console.error("2. If browser works but app doesn't, install SSL certificate on device");
             console.error("3. Check if device/emulator can reach the server IP");
             console.error("4. Verify the SSL certificate is installed as USER certificate");

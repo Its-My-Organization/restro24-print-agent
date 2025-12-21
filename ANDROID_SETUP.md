@@ -7,16 +7,48 @@ This guide covers additional setup steps needed to make the Android print agent 
 ## 1. SSL Certificate Handling
 
 ### Problem
-If your cloud API uses a **self-signed SSL certificate** (like `https://164.68.118.52:8006`), Android will reject the connection by default.
+If your cloud API uses a **self-signed SSL certificate** (like `https://restro24api.dailotech.com`), Android will reject the connection by default.
 
 ### Solutions
 
 #### Option A: Install Certificate on Device (Recommended for Production)
+
+**Method 1: GUI Installation (Try this first)**
 1. Download your server's SSL certificate (`.crt` or `.pem` file)
+   - Use the provided script: `./extract-certificate.sh <host> <port>`
 2. On Android device: **Settings → Security → Install from storage**
 3. Select the certificate file
-4. Name it (e.g., "Restro API Certificate")
-5. The app will now trust the certificate
+4. **IMPORTANT**: When Android shows "Install a certificate" with three options:
+   - ✅ Select **"CA certificate"** (this is correct - no private key needed)
+   - ❌ Do NOT select "Wi-Fi certificate" (requires private key)
+   - ❌ Do NOT select "VPN & app user certificate" (requires private key)
+5. If you see **"Private key required to install a certificate"** error:
+   - This means the certificate doesn't have the `CA:TRUE` flag
+   - Try **Method 2** (DER format) or **Method 3** (ADB installation) below
+6. Name it (e.g., "Restro API Certificate")
+7. Restart the app
+
+**Method 2: Try DER Format**
+Some Android versions handle DER format better:
+1. The extraction script automatically creates a `.der.crt` file
+2. Transfer `server-<host>-<port>.der.crt` to your Android device
+3. Follow steps 2-7 from Method 1 above
+
+**Method 3: ADB Installation (If Methods 1 & 2 fail)**
+Use the provided ADB installation script:
+```bash
+./install-certificate-adb.sh server-<host>-<port>.crt
+```
+This script will guide you through the installation process.
+
+**Troubleshooting: "Private key required" error**
+- This happens when the server certificate doesn't have `CA:TRUE` in its Basic Constraints
+- The extraction script will warn you if this is the case
+- Solutions:
+  1. Try the DER format (Method 2)
+  2. Use ADB installation (Method 3)
+  3. For development: Use HTTP instead of HTTPS (see Option B)
+  4. For production: Get server admin to create a proper CA certificate with `CA:TRUE` flag
 
 #### Option B: Use HTTP for Development (Not Recommended for Production)
 - Change `cloudApiBaseUrl` in config to use `https://` instead of `https://`

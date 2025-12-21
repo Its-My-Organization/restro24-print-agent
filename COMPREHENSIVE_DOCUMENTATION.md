@@ -286,7 +286,7 @@ print-agent-expo/
 
 **Configuration Fields**:
 - `restaurantId`: Restaurant identifier (integer)
-- `cloudApiBaseUrl`: Cloud API URL (e.g., `https://164.68.118.52:8006`)
+- `cloudApiBaseUrl`: Cloud API URL (e.g., `https://restro24api.dailotech.com`)
 - `apiKey`: API authentication key
 - `agentId`: Stable agent identifier (defaults to `Android-{restaurantId}`)
 - `agentName`: Human-readable agent name
@@ -442,7 +442,7 @@ print-agent-expo/
 2. **Open app** → Config tab
 3. **Fill in**:
    - Restaurant ID (from Restro24 system)
-   - Cloud API Base URL (e.g., `https://164.68.118.52:8006`)
+   - Cloud API Base URL (e.g., `https://restro24api.dailotech.com`)
    - API Key (same as Windows service uses)
    - Agent ID (optional, defaults to `Android-{restaurantId}`)
    - Agent Name (e.g., "Kitchen Tablet 1")

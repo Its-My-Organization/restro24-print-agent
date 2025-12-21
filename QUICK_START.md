@@ -31,7 +31,7 @@ npm start
 1. Open app → **Config** tab
 2. Fill in:
    - Restaurant ID: `3`
-   - Cloud API Base URL: `https://164.68.118.52:8006`
+   - Cloud API Base URL: `https://restro24api.dailotech.com`
    - API Key: `test-api-key-12345`
    - Kitchen Printer IP: `192.168.101.8`
    - Bar Printer IP: `192.168.101.8`
@@ -64,13 +64,15 @@ src/
 
 **Agent not registering? (SSL Certificate Error)**
 - **Quick Fix (Development)**: Change URL from `https://` to `http://` in the config screen
-  - Example: `http://164.68.118.52:8006` instead of `https://164.68.118.52:8006`
+  - Example: `http://164.68.118.52:8006` instead of `https://restro24api.dailotech.com`
   - ⚠️ **Warning**: HTTP is insecure, only use for development/testing!
 - **Proper Fix (Production)**: Install the SSL certificate on Android device
   1. Extract certificate: Run `./extract-certificate.sh 164.68.118.52 8006` (or `.bat` on Windows)
   2. Transfer `.crt` file to Android device
-  3. Settings → Security → Install from storage → Select certificate → Install as USER certificate
-  4. Restart app
+  3. Settings → Security → Install from storage → Select certificate
+  4. **IMPORTANT**: When prompted, select **"CA certificate"** (NOT "Wi-Fi certificate" or "VPN & app user certificate")
+  5. Name it (e.g., "Restro API Certificate")
+  6. Restart app
 - Check API URL and API key are correct
 - Verify device can reach the server IP
 
